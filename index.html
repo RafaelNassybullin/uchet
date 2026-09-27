@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Учёт имущества</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 30px;
+      font-family: Arial, sans-serif;
+      background: #f5f6f8;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 20px;
+      font-size: 28px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    select {
+      width: 250px;
+      padding: 11px 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 13px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #f0f1f3;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    .checkbox-cell {
+      width: 60px;
+      text-align: center;
+    }
+
+    input[type="checkbox"] {
+      width: 19px;
+      height: 19px;
+      cursor: pointer;
+    }
+
+    .checked-row {
+      background: #eef8ee;
+    }
+
+    .checked-row td {
+      color: #777;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      padding: 15px 0;
+    }
+
+    .counter {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .clear-button {
+      padding: 11px 18px;
+      border: none;
+      border-radius: 8px;
+      background: #dc3545;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .clear-button:hover {
+      background: #bb2d3b;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+
+      .controls {
+        width: 100%;
+      }
+
+      select {
+        width: 100%;
+      }
+
+      .footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .clear-button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>Учёт имущества</h1>
+
+    <div class="controls">
+      <select id="titleFilter">
+        <option value="all">Все отделы</option>
+      </select>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th class="checkbox-cell">✓</th>
+            <th>№</th>
+            <th>Наименование</th>
+            <th>Расположение</th>
+            <th>Отдел</th>
+          </tr>
+        </thead>
+
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      <div class="counter" id="counter">
+        Проверено: 0
+      </div>
+
+      <button class="clear-button" id="clearStorage">
+        Очистить сохранённые отметки
+      </button>
+    </div>
+
+  </div>
+
+
+  <script>
+    const data = [
+  // Офис
+  { title: "Офис", num: "БГМ0026 22", name: "ПК UPS", dist: "офис на моем компьютере" },
+  { title: "Офис", num: "БГМ0026 21", name: "ПК UPS", dist: "Офис серверная" },
+  { title: "Офис", num: "БГМ0031 23", name: "Тумба на ножках", dist: "Офис, мой кабинет" },
+  { title: "Офис", num: "БГМ0031 25", name: "Стол тумбовый угловой", dist: "Офис, мой кабинет" },
+  { title: "Офис", num: "БГМ0031 26", name: "Шкаф некомбинированный", dist: "Офис, мой кабинет" },
+  { title: "Офис", num: "БГМ0019 74", name: "Компьютер", dist: "Офис конференц зал" },
+  { title: "Офис", num: "БГМ0021 31", name: "Компьютер в сборе", dist: "Офис в кабинете Задыгерея на окне" },
+  { title: "Офис", num: "БГМ0029 77", name: "Компьютер в сборе", dist: "Офис серверная" },
+  { title: "Офис", num: "БГМ0002 54", name: "ПК UPS", dist: "Офис кабинет бухгалтерии" },
+  { title: "Офис", num: "БГМ0001 10", name: "Электрошуруповер", dist: "Офис склад" },
+  { title: "Офис", num: "БГМ0030 68", name: "Компьютер-комплект HP ProDessk 400 G3 MT", dist: "Офис мой комп" },
+  { title: "Офис", num: "БГМ0031 92", name: "Кресло БГМ000841", dist: "Офис мой кабинет" },
+  { title: "Офис", num: "БГМ0036 79", name: "Телефонный аппарат БГМ000950", dist: "Офис мой кабинет" },
+  { title: "Офис", num: "БГМ0023 77", name: "Монитор", dist: "Офис, склад" },
+  { title: "Офис", num: "БГМ0031 38", name: 'Стулья "Мини-гранде" БГМ000931', dist: "Офис склад" },
+  { title: "Офис", num: "БК00002 40", name: "Шасси TP-Link TL-MC1400", dist: "Офис серверная" },
+  { title: "Офис", num: "БК00002 41", name: "Коммутатор D-Link DGS-1210-20 FL1A", dist: "Офис серверная" },
+  { title: "Офис", num: "БК00002 48", name: "Коммутатор сетевой SW-216", dist: "Офис серверная" },
+  { title: "Офис", num: "БГМ0046 86", name: "Монитор  Samsung  LF27T350FHIXCI", dist: "Офис конференц зал" },
+  { title: "Офис", num: "БГМ0046 87", name: "Монитор  Samsung  LF27T350FHIXCI", dist: "Офис мой комп" },
+  { title: "Офис", num: "БГМ0049 53", name: "Вебкамера Group Logitech (960-001057)", dist: "Офис конференц зал" },
+  { title: "Офис", num: "БГМ0030 69", name: "Компьютер-комплект HP ProDessk 400 G3 MT , 4Gb, 500Gb + Webcam HD2300", dist: "Офис серверная" },
+  { title: "Офис", num: "БГМ0030 70", name: "Компьютер-комплект HP ProDessk 400 G3 MT , 4Gb, 500Gb + Webcam HD2300", dist: "Офис серверная" },
+  { title: "Офис", num: "БГМ0047 89", name: "Ноутбук LENOVO Think Pad T460 Intel(R) Core (TM) i5-6300CPU", dist: "Жанар Апай ноут или мой ноут" },
+
+  // Айжан кабинет
+  { title: "Айжан кабинет", num: "БК00002 31", name: "МФУ Лазерное  HP LaserJetPro M428dw", dist: "Кабинет Айжан" },
+
+  // КПП
+  { title: "КПП", num: "БГМ0021 26", name: "Компьютер в сборе", dist: "КПП" },
+  { title: "КПП", num: "БГМ0030 63", name: "Компьютер-комплект HP ProDessk 400 G3 MT", dist: "КПП" },
+  { title: "КПП", num: "БГМ0036 70", name: "Телефонный аппарат БГМ000950", dist: "КПП" },
+  { title: "КПП", num: "БК00002 42", name: "Коммутатор D-Link DGS-1100-10/ME A2A", dist: "КПП" },
+  { title: "КПП", num: "БК00002 51", name: "Коммутатор сетевой SW-108", dist: "КПП" },
+  { title: "КПП", num: "БГМ0049 61", name: "Телевизор  LED QWATT Q43YK-MB", dist: "КПП" },
+  { title: "КПП", num: "БГМ0046 81", name: "Телевизор 43 LED Q43YK-MB SMART TV", dist: "КПП" },
+  { title: "КПП", num: "БГМ0046 82", name: "Телевизор 43 LED Q43YK-MB SMART TV", dist: "КПП" },
+  { title: "КПП", num: "БГМ0046 83", name: "Источник бесперебойного питания SVC .", dist: "КПП" },
+
+  // Инженер, Буркитова и Медик
+  { title: "Инженер, Буркитова и Медик", num: "БГМ0021 37", name: "Компьютер в сборе", dist: "Акимжан главный инженер" },
+  { title: "Инженер, Буркитова и Медик", num: "БК00002 49", name: "Коммутатор сетевой SW-216", dist: "Завод, мойка 2й этаж, кабинет Буркитовой" },
+  { title: "Инженер, Буркитова и Медик", num: "БГМ0030 66", name: "Компьютер-комплект HP ProDessk 400 G3 MT", dist: "Кабинет медика" },
+
+  // Серверная завод
+  { title: "Серверная завод", num: "БГМ0002 48", name: "ПК UPS", dist: "Серверная завод" },
+
+  // Розлив цех
+  { title: "Розлив цех", num: "БГМ0030 83", name: "Компьютер в комплекте", dist: "Цех розлива 1й комп" },
+  { title: "Розлив цех", num: "БГМ0030 53", name: "Компьютер", dist: "Цех розлива 2й комп" },
+  { title: "Розлив цех", num: "БГМ0047 87", name: "Видеокамера Hikvision DS-2SE4C425MWG-E", dist: "Завод, цех розлива ПТЗ" },
+  { title: "Розлив цех", num: "БГМ0030 64", name: "Компьютер-комплект HP ProDessk 400 G3 MT", dist: "Завод розлив, кабинет Савиной" },
+
+  // СБшник
+  { title: "СБшник", num: "БГМ0030 44", name: "ПК системный блок core i3-8100", dist: "Завод кабинет СБ" },
+
+  // ТБшник
+  { title: "ТБшник", num: "БК00002 47", name: "Коммутатор D-Link DES-1210-28/ME B3B", dist: "Завод, кабинет инженера ТБ" },
+
+  // Видео комната
+  { title: "Видео комната", num: "БГМ0034 85", name: "Стол БГМ000916", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0029 91", name: "Райд-контролер модель LSI 9271", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0031 09", name: "Видеорегистратор", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 23", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 24", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 25", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 26", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 27", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 28", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 29", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 30", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 31", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 32", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 33", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 34", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 35", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 36", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 37", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 38", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 39", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0014 30", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0014 31", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0014 51", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0014 52", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0017 58", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0020 26", name: "Колонка звуковая ITC T-902", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0020 27", name: "Колонка звуковая ITC T-902", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0018 17", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0018 18", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0018 90", name: "Видеокамера", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0018 03", name: "Видеорегистр", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0017 54", name: "Видеорегистратор", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0018 92", name: "Видеорегистратор", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0019 21", name: "Кондиционер Samsung AQ-07TFANSER (Borakay)", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0002 62", name: "ПК UPS", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0002 67", name: "ПК монитор", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0038 72", name: "Стул жесткий БГМ000929", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БК00000 17", name: "Стул жесткий БГМ000929", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0036 41", name: "Телефонный аппарат БГМ000950", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0009 05", name: "Сейф D-40 G", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БК00002 56", name: "Видеорегистратор Hikvision DS-7732NI-K4", dist: "Комната видеонаблюдения" },
+  { title: "Видео комната", num: "БГМ0020 25", name: "Усилитель мощности ITC T-1S120", dist: "Комната видеонаблюдения" },
+
+  // Механик
+  { title: "Механик", num: "БГМ0049 59", name: "Видеокамера Nikvision DS-2CD1163G2-LIU", dist: "Завод, кабинет механика" },
+
+  // АТС
+  { title: "АТС", num: "БГМ0020 47", name: "Мини АТС", dist: "Завод комната АТС" },
+  { title: "АТС", num: "БГМ0002 60", name: "ПК UPS", dist: "Завод комната АТС" },
+  { title: "АТС", num: "БГМ0020 48", name: "Плата 8 СО линий", dist: "Завод комната АТС" },
+  { title: "АТС", num: "БГМ0020 49", name: "Плата OGM", dist: "Завод комната АТС" },
+
+  // Вышка сзади завода
+  { title: "Вышка сзади завода", num: "БК00002 45", name: "Коммутатор D-Link DGS-1100-10/ME A2A", dist: "Пост вышка, за эстокадой" },
+
+  // Склады
+  { title: "Склады", num: "БК00002 50", name: "Коммутатор сетевой SW-108", dist: "Завод склад 10тыс." },
+  { title: "Склады", num: "БК00002 52", name: "Коммутатор сетевой SW-108", dist: "Центральный склад" },
+  { title: "Склады", num: "БК00002 54", name: "Коммутатор сетевой SW-108", dist: "Склад фурнитуры" },
+  { title: "Склады", num: "БГМ0049 54", name: "Коммутатор 5- портативный неуправляемый   IP-COM G1105P-4-63W", dist: "Завод склад 10тыс." },
+  { title: "Склады", num: "БК00002 43", name: "Коммутатор D-Link DGS-1100-10/ME A2A", dist: "Центральный склад" },
+  { title: "Склады", num: "БК00002 44", name: "Коммутатор D-Link DGS-1100-10/ME A2A", dist: "Склад фурнитуры" },
+  { title: "Склады", num: "БГМ0002 61", name: "ПК UPS", dist: "Склад фурнитуры" },
+
+  // Камеры на улице
+  { title: "Камеры на улице", num: "БГМ0018 61", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 62", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0017 78", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0015 58", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0014 32", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0014 33", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0014 34", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0014 54", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0014 55", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0014 37", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0017 37", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0017 59", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0017 60", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0017 61", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 04", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 05", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 06", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 07", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 08", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 09", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 10", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 11", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 12", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 13", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 14", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 15", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0018 16", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0028 85", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0028 86", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0028 87", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0028 88", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0028 99", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0029 00", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0029 01", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0030 94", name: "Видеокамера аналоговая уличная HD с ИК подсветкой", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0030 96", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0030 97", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0030 98", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0030 99", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0031 00", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0031 01", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0031 02", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0031 03", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0031 04", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0031 05", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0031 06", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0031 07", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0031 08", name: "Видеокамера цветная", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 57", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 59", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 60", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 61", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 62", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 63", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 64", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 65", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 66", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 67", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 68", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 69", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БК00002 70", name: "Видеокамера", dist: "На территории" },
+  { title: "Камеры на улице", num: "БГМ0049 55", name: "Видеокамера Nikvision DS-2CD1163G2-LIU", dist: "На территории, навес, 3й склад" },
+  { title: "Камеры на улице", num: "БГМ0049 56", name: "Видеокамера Nikvision DS-2CD1163G2-LIU", dist: "На территории, 10тыс навес" },
+  { title: "Камеры на улице", num: "БГМ0049 57", name: "Видеокамера Nikvision DS-2CD1163G2-LIU", dist: "На территории, 10тыс" },
+  { title: "Камеры на улице", num: "БГМ0049 58", name: "Видеокамера Nikvision DS-2CD1163G2-LIU", dist: "На территории, 10тыс" }
+];
+
+
+    const STORAGE_KEY = "inventory_checked";
+
+    const tableBody = document.getElementById("tableBody");
+    const titleFilter = document.getElementById("titleFilter");
+    const counter = document.getElementById("counter");
+    const clearStorageButton = document.getElementById("clearStorage");
+
+
+    // Получаем отмеченные элементы
+    function getCheckedItems() {
+      return JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "{}"
+      );
+    }
+
+
+    // Сохраняем отмеченный элемент
+    function saveCheckedItem(num, checked) {
+      const checkedItems = getCheckedItems();
+
+      if (checked) {
+        checkedItems[num] = true;
+      } else {
+        delete checkedItems[num];
+      }
+
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(checkedItems)
+      );
+    }
+
+
+    // Создаём список dropdown
+    function createFilters() {
+      const titles = [
+        ...new Set(data.map(item => item.title))
+      ];
+
+      titles.forEach(title => {
+        const option = document.createElement("option");
+
+        option.value = title;
+        option.textContent = title;
+
+        titleFilter.appendChild(option);
+      });
+    }
+
+
+    // Отрисовка таблицы
+    function renderTable() {
+      const selectedTitle = titleFilter.value;
+      const checkedItems = getCheckedItems();
+
+      tableBody.innerHTML = "";
+
+      const filteredData = data.filter(item => {
+        return (
+          selectedTitle === "all" ||
+          item.title === selectedTitle
+        );
+      });
+
+
+      filteredData.forEach(item => {
+
+        const tr = document.createElement("tr");
+
+        const isChecked = !!checkedItems[item.num];
+
+        if (isChecked) {
+          tr.classList.add("checked-row");
+        }
+
+
+        // Checkbox
+        const checkboxTd = document.createElement("td");
+
+        checkboxTd.className = "checkbox-cell";
+
+        const checkbox = document.createElement("input");
+
+        checkbox.type = "checkbox";
+        checkbox.checked = isChecked;
+
+        checkbox.addEventListener("change", () => {
+
+          saveCheckedItem(
+            item.num,
+            checkbox.checked
+          );
+
+          tr.classList.toggle(
+            "checked-row",
+            checkbox.checked
+          );
+
+          updateCounter();
+        });
+
+        checkboxTd.appendChild(checkbox);
+
+
+        // Номер
+        const numTd = document.createElement("td");
+        numTd.textContent = item.num;
+
+
+        // Название
+        const nameTd = document.createElement("td");
+        nameTd.textContent = item.name;
+
+
+        // Расположение
+        const distTd = document.createElement("td");
+        distTd.textContent = item.dist;
+
+
+        // Отдел
+        const titleTd = document.createElement("td");
+        titleTd.textContent = item.title;
+
+
+        tr.appendChild(checkboxTd);
+        tr.appendChild(numTd);
+        tr.appendChild(nameTd);
+        tr.appendChild(distTd);
+        tr.appendChild(titleTd);
+
+        tableBody.appendChild(tr);
+      });
+
+      updateCounter();
+    }
+
+
+    // Счётчик
+    function updateCounter() {
+      const checkedItems = getCheckedItems();
+
+      const checkedCount = Object.keys(
+        checkedItems
+      ).length;
+
+      const totalCount = data.length;
+
+      counter.textContent =
+        `Проверено: ${checkedCount} / ${totalCount}`;
+    }
+
+
+    // Фильтр
+    titleFilter.addEventListener("change", () => {
+      renderTable();
+    });
+
+
+    // Очистка localStorage
+    clearStorageButton.addEventListener("click", () => {
+
+      const confirmed = confirm(
+        "Очистить все сохранённые отметки?"
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      localStorage.removeItem(STORAGE_KEY);
+
+      renderTable();
+    });
+
+
+    // Запуск
+    createFilters();
+    renderTable();
+
+  </script>
+
+</body>
+</html>
